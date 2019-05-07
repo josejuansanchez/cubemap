@@ -1,0 +1,146 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cube map</title>
+    <link rel="stylesheet" href="https://cdn.pannellum.org/2.4/pannellum.css"/>
+    <script type="text/javascript" src="https://cdn.pannellum.org/2.4/pannellum.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<style>
+    #panorama {
+        width: 600px;
+        height: 400px;
+    }
+    </style>
+</head>
+<body>
+
+<!-- 
+The six cube faces are expected in the following order:
+- front, right, back, left, up, down.
+- [+z, +x, -z, -x, +y, -y]
+-->
+
+<div id="panorama"></div>
+
+<script>
+var v = pannellum.viewer('panorama', {
+    "type": "cubemap",
+    "cubeMap": [
+        "images/cubemap_pz.jpg",
+        "images/cubemap_px.jpg",
+        "images/cubemap_nz.jpg",
+        "images/cubemap_nx.jpg",
+        "images/cubemap_py.jpg",
+        "images/cubemap_ny.jpg"
+    ],
+    "autoLoad": true,
+    "compass": true,
+    "hfov": 90 /*120*/
+});
+</script>
+
+<table>
+    <tr>
+        <td>+Z (front)</td>
+        <td>+X (right)</td>
+        <td>-Z (back)</td>
+        <td>-X (left)</td>
+        <td>+Y (up)</td>
+        <td>-Y (down)</td>
+    </tr>
+    <tr>
+        <td><img src="images/cubemap_pz.jpg" height="168" width="168"></td>
+        <td><img src="images/cubemap_px.jpg" height="168" width="168"></td>
+        <td><img src="images/cubemap_nz.jpg" height="168" width="168"></td>
+        <td><img src="images/cubemap_nx.jpg" height="168" width="168"></td>
+        <td><img src="images/cubemap_py.jpg" height="168" width="168"></td>
+        <td><img src="images/cubemap_ny.jpg" height="168" width="168"></td>
+    </tr>
+</table>
+
+<!--
+<input type="button" value="Calculate Spherical Coordinates" onclick="toSphericalCoordinates()">
+-->
+
+<div id="app">
+<pre>
+Config: {{ config }}
+</pre>
+</div>        
+
+<script>
+let app = new Vue({
+    el: '#app',
+    data: {
+        config: v.getConfig(),
+        pitch: v.getPitch()
+    }
+});
+
+function toSphericalCoordinates() {
+    theta = v.getPitch();   // [-90, 90]
+    phi = v.getYaw();       // [-180, 180]
+
+    console.log("theta: " + theta);
+    console.log("phi: " + phi);
+
+    x = Math.cos(theta * Math.PI / 180) * Math.sin(phi * Math.PI / 180);
+    y = Math.sin(theta * Math.PI / 180) * Math.sin(phi * Math.PI / 180);
+    z = Math.cos(phi * Math.PI / 180);
+
+    let maximum = Math.max(Math.abs(x), Math.abs(y), Math.abs(z));
+    let xx = x / maximum;
+    let yy = y / maximum;
+    let zz = z / maximum;
+
+    if (xx == 1) {
+        console.log("Face: X ");
+    } else if (xx == -1) {
+        console.log("Face: -X");
+        //projectX(theta, phi, xx);
+    } else if (yy == 1) {
+        console.log("Face: Y");
+    } else if (yy == -1) {
+        console.log("Face: -Y");
+        //projectY(theta, phi, yy);
+    } else if (zz == 1) {
+        console.log("Face: Z");
+        //projectZ(theta, phi, zz);
+    } else {
+        console.log("Face: -Z");        
+    }
+
+    let viewport_top_theta = theta + 90.0;
+    let viewport_bottom_theta = theta - 90.0;
+    let viewport_left_phi = theta - 90.0;
+    let viewport_right_theta = theta + 90.0;
+    
+    console.log("viewport_top_theta: " + viewport_top_theta);
+    console.log("viewport_bottom_theta: " + viewport_bottom_theta);
+    console.log("viewport_left_phi: " + viewport_left_phi);
+    console.log("viewport_right_theta: " + viewport_right_theta);
+
+    let response = new Array();
+    response["x"] = x;
+    response["y"] = y;
+    response["z"] = z;
+    response["maximum"] = maximum;
+    response["xx"] = xx;
+    response["yy"] = yy;
+    response["zz"] = z;
+
+    console.log(response);
+
+    return  response;
+}
+</script>
+
+<!--
+Viewport: v.lookAt(0,360,120)
+Parameters: pitch, yaw, hfov, width, height
+-->
+
+</body>
+</html>
